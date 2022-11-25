@@ -49,9 +49,8 @@ class VecFeatureNet(nn.Module):
         mt_tmp = torch.flatten(mt_tmp, 1)
         return mt_tmp
 
+
 # 使用ActorNet替换PPONet的Actor部分
-
-
 class ActorNet(nn.Module):
     def __init__(self) -> None:
         super(ActorNet, self).__init__()
@@ -59,9 +58,8 @@ class ActorNet(nn.Module):
     def forward(self):
         pass
 
+
 # 使用CriticNet替换PPONet的Critic部分
-
-
 class CriticNet(nn.Module):
     def __init__(self) -> None:
         super(CriticNet, self).__init__()
@@ -69,10 +67,9 @@ class CriticNet(nn.Module):
     def forward(self):
         pass
 
+
 # PPO的策略网络，输入为env_state和vec_state
 # TODO：优化为一个输入
-
-
 class PPONet(nn.Module):
     def __init__(self, num_outputs, obs_type="img") -> None:
         super(PPONet, self).__init__()
@@ -133,6 +130,7 @@ class PPONet(nn.Module):
     def forward(self, env_obs, vec_obs):
         action_mean, action_logstd = self._forward_actor(env_obs, vec_obs)
         critic_value = self._forward_critic(env_obs, vec_obs)
+        # 只在这里体现critic_value,为啥不把actor和critic分开成两个网络
         return action_mean, action_logstd, critic_value
 
     def select_action(self, action_mean, action_logstd):

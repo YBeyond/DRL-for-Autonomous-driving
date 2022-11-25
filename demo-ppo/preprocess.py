@@ -5,10 +5,7 @@ import numpy as np
 
 
 from smarts.core.sensors import Observation
-from smarts import sstudio
-# import ultra.ultra.adapters.default_observation_image_adapter as default_observation_image_adapter
-# from ultra.utils.common import get_closest_waypoint, get_path_to_goal
-
+from util import get_closest_waypoint, get_path_to_goal
 
 _VEC_NORMALIZATION_VALUES = {
     "speed": 30,
@@ -62,17 +59,17 @@ class EnvPostProcessor():
         ego_goal = env_obs.ego_vehicle_state.mission.goal
         ego_waypoits = env_obs.waypoint_paths
 
-        # ego_goal_path = get_path_to_goal(
-        #     goal=ego_goal, paths=ego_waypoits, start=ego_start)
-        # ego_closest_waypoint, ego_lookahead_waypoits = get_closest_waypoint(
-        #     num_lookahead=20, goal_path=ego_goal_path, ego_position=ego_position, ego_heading=ego_heading)
-        # speed_limit = ego_closest_waypoint.speed_limit
-        speed_limit = 30.0
+        ego_goal_path = get_path_to_goal(
+            goal=ego_goal, paths=ego_waypoits, start=ego_start)
+        ego_closest_waypoint, ego_lookahead_waypoits = get_closest_waypoint(
+            num_lookahead=20, goal_path=ego_goal_path, ego_position=ego_position, ego_heading=ego_heading)
+        speed_limit = ego_closest_waypoint.speed_limit
+        # speed_limit = 30.0
         speed_ratio = max(0, ego_speed/speed_limit)
 
         # 归一化后的vec
-        vec_state = {"target_speed": speed_limit / 30.0, "speed": ego_speed / 30.0, "steering": ego_steering / 3.14,
-                     "speed_ratio": speed_ratio, "last_steering": self.last_steering / 3.14, "last_accelerate": self.last_accelerate}
+        vec_state = {"target_speed": speed_limit / 30.0, "speed": ego_speed / 30.0, "steering": ego_steering,
+                     "speed_ratio": speed_ratio, "last_steering": self.last_steering, "last_accelerate": self.last_accelerate}
         # 输入网络后聚合
         env_state = {"env_info": self.env_img_deque,
                      "vec_info": vec_state.values()}
