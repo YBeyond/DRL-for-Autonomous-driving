@@ -6,6 +6,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as opt
+import multiprocessing
+
+from memory_profiler import profile
 
 
 # from workers import MemorySampler
@@ -16,7 +19,7 @@ from param import PolicyParam
 from tensorboardX import SummaryWriter
 
 writer = SummaryWriter(log_dir='./log')
-TENSORBOARD_LOG = False
+TENSORBOARD_LOG = True
 
 
 # 定义logger
@@ -65,7 +68,7 @@ class MulProPPO:
 
     def _check_keys(self, model, pretrained_state_dict):
         ckpt_keys = set(pretrained_state_dict.keys())
-        model_keys = set(model.state_dict.keys())
+        model_keys = set(model.state_dict().keys())
         used_pretrained_keys = model_keys & ckpt_keys
         missing_keys = ckpt_keys - model_keys
         missing_keys = [x for x in missing_keys if not x.endswith(
@@ -133,7 +136,9 @@ class MulProPPO:
             oldlogprobas = oldlogprobas.to(self.device)
             advantages = advantages.to(self.device)
             returns = returns.to(self.device)
-            for i_epoch in range(int(self.args.num_epoch * batch_size / self.args.minibatch_size)):
+            epoches = int(self.args.num_epoch * batch_size /
+                          self.args.minibatch_size)
+            for i_epoch in range(epoches):
                 print("i_epoch : {}".format(i_epoch))
                 minibatch_ind = np.random.choice(
                     batch_size, self.args.minibatch_size, replace=False)
@@ -185,7 +190,8 @@ class MulProPPO:
                               loss_value + self.args.loss_coeff_entropy * loss_entropy)
                 if TENSORBOARD_LOG:
                     writer.add_scalars('ppo_loss', {'loss_surr': loss_surr, 'loss_value': loss_value,
-                                                    'loss_entropy': loss_entropy, 'total_loss': total_loss}, i_epoch)
+                                                    'loss_entropy': loss_entropy, 'total_loss': total_loss},
+                                       i_episode * epoches + i_epoch)
                 self.optimizer.zero_grad()
                 total_loss.backward()
                 nn.utils.clip_grad.clip_grad_norm_(

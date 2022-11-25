@@ -16,7 +16,6 @@ from smarts import sstudio
 
 
 logger = logging.getLogger("PPO")
-# logger.setLevel(logging.DEBUG)
 
 Transition = namedtuple("Transition", ("env_state", "vec_state",
                         "value", "action", "logproba", "mask", "reward", "info"))
@@ -104,8 +103,10 @@ class EnvWorker(mp.Process):
                             value = critic_value.data.cpu().numpy()[0]
                             env_state = env_state.data.cpu().numpy()[0]
                             vec_state = vec_state.data.cpu().numpy()[0]
-                        agent_action = [action[0], max(
-                            0, action[1]), min(0, action[1])]
+                        self.env_post_processor.RecordLastAction(action=action)
+                        # steer:action[0],accelerate:action[1]-> [throttle,brake,steer]
+                        agent_action = [max(
+                            0, action[1]), min(0, action[1]), action[0]]
                         # agent_action = agent.act(observation)
                         observation, reward, done, info = env.step(
                             agent_action)
@@ -125,7 +126,6 @@ class EnvWorker(mp.Process):
         env.close()
 
     def run(self):
-
         parser = default_argument_parser("single-agent-example")
         args = parser.parse_args()
 
@@ -139,14 +139,18 @@ class EnvWorker(mp.Process):
                 )
             ]
         root_dir = "/src/smarts/scenarios"
-        args.scenarios = [root_dir+"/intersection/1_to_2lane_left_turn_c",
-                          root_dir+"/intersection/1_to_2lane_left_turn_t",
-                          root_dir+"/merge/3lane_multi_agent",
-                          root_dir+"/merge/3lane_single_agent",
-                          ]
+        # args.scenarios = [root_dir+"/intersection/1_to_2lane_left_turn_c",
+        #                   root_dir+"/intersection/1_to_2lane_left_turn_t",
+        #                   root_dir+"/merge/3lane_multi_agent",
+        #                   root_dir+"/merge/3lane_single_agent",
+        #                   ]
+        args.scenarios = [root_dir+"/intersection/1_to_2lane_left_turn_c"]
+        # args.scenarios = [root_dir+"/intersection/1_to_2lane_left_turn_t"]
+        # args.scenarios = [root_dir+"/merge/3lane_multi_agent"]
+        # args.scenarios = [root_dir+"/merge/3lane_single_agent"]
+        args.headless = True
 
         # sstudio.build_scenario(scenario=args.scenarios)
-
         self.do_process(
             scenarios=args.scenarios,
             headless=args.headless,

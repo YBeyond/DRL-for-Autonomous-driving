@@ -6,7 +6,7 @@ import torch
 class PolicyParam:
     seed: int = 42
 
-    num_workers: int = 10
+    num_workers: int = 8
     num_episode: int = 100000
     batch_size: int = 2048
     minibatch_size: int = 128
@@ -24,7 +24,8 @@ class PolicyParam:
     max_grad_norm: float = 0.2
 
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
-    model_path: str = None
+    model_path: str = "/src/results/2022-11-25/model_1669339873.344918/network_140.pth"
+    mode: str = "train"
 
     advantage_norm: bool = False
     use_clipped_value_loss: bool = False

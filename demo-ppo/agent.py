@@ -1,20 +1,24 @@
 import logging
-import logging.config
 
 import torch
+import torch.nn as nn
 import numpy as np
 
 from smarts.core.agent import Agent
 from smarts.core.sensors import Observation
 from preprocess import EnvPostProcessor
 from network import PPONet
+from param import PolicyParam
 
 
 class PPOContinuousAgent(Agent):
-    def __init__(self, running_mode="train") -> None:
+    def __init__(self) -> None:
+        self.args = PolicyParam
         self.model = PPONet(2)
         self.env_post_processor = EnvPostProcessor()
-        self.training = True if running_mode == "train" else False
+        if self.args.model_path and self.args.mode == "eval":
+            self.model.load_state_dict(torch.load(
+                self.args.model_path), strict=False)
 
     def act(self, obs: Observation):
         new_env_obs = self.env_post_processor.AssembleEnvState(obs)
@@ -30,11 +34,13 @@ class PPOContinuousAgent(Agent):
         # [throttle, brake, steer]
         desire_action = [max(0, action[1]), min(
             0, action[1]), action[0]]
-        transition = zip(env_state, vec_state, desire_action, critic_value)
-        if self.training:
-            return transition, desire_action
-        else:
-            return desire_action
+        return desire_action
+
+        # if self.args.mode == "train":
+        #     transition = zip(env_state, vec_state, desire_action, critic_value)
+        #     return transition, desire_action
+        # else:
+        #     return desire_action
 
     # 该函数基于数据进行训练
     def update(self, transition):
